@@ -3,42 +3,32 @@ session_start();
 require_once "../config/koneksi.php";
 
 if (isset($_POST['simpan'])) {
-    $email = $_SESSION['EMAILNYABRO'];
+    $id_user = $_SESSION['ID'] ? $_SESSION['ID'] : '';
 
 
-    $query = mysqli_query($koneksi, "SELECT id FROM user WHERE email = '$email'");
-    $row = mysqli_fetch_assoc($query);
+    $kode_transaksi = $_POST['kode_transaksi'];
+    $tanggal_transaksi = $_POST['tanggal_transaksi'];
+    $total_harga = $_POST['total_harga'];
+    $nominal_bayar = $_POST['nominal_bayar'];
+    $kembalian = $_POST['kembalian'];
 
-    $id_user            = $row['id'];
+    $queryPenjualan = mysqli_query($koneksi, "INSERT INTO penjualan (id_user, kode_transaksi, tanggal_transaksi) VALUES ('$id_user','$kode_transaksi','$tanggal_transaksi')");
 
-    $kode_transaksi     = $_POST['kode_transaksi'];
-    $tanggal_transaksi  = $_POST['tanggal_transaksi'];
-    $total_harga        = $_POST['total_harga'];
-    $nominal_bayar      = $_POST['nominal_bayar'];
-    $kembalian          = $_POST['kembalian'];
-
-    $queryPenjualan = mysqli_query($koneksi, "INSERT INTO penjualan (id_user, kode_transaksi, tanggal_transaksi) VALUES ('$id_user' , '$kode_transaksi', '$tanggal_transaksi')");
-    // print_r($queryPenjualan);
-    // die;
 
     $id_penjualan = mysqli_insert_id($koneksi);
 
     foreach ($_POST['id_barang'] as $key => $id_barang) {
         $jumlah = $_POST['jumlah'][$key];
+        $harga = $_POST['harga'][$key];
+        $sub_total = $_POST['sub_total'][$key];
 
-        //ambil stok dan harga barang
-        $barang = mysqli_query($koneksi, "SELECT harga, qty FROM barang WHERE id = '$id_barang'");
-        $barangData = mysqli_fetch_assoc($barang);
 
-        $harga  = $barangData['harga'];
-        $qty    = $barangData['qty'];
+        $detailPenjualan = mysqli_query($koneksi, "INSERT INTO detail_penjualan (sub_total, id_penjualan, id_barang, jumlah, harga, total_harga, nominal_bayar, kembalian) VALUES ('$sub_total', '$id_penjualan', '$id_barang', '$jumlah', '$harga', '$total_harga', '$nominal_bayar', '$kembalian')");
 
-        $total_harga_detail = $jumlah * $harga;
-
-        $detailPenjualan = mysqli_query($koneksi, "INSERT INTO detail_penjualan (id_penjualan, id_barang, jumlah, qty, harga, total_harga, nominal_bayar, kembalian) VALUES ('$id_penjualan','$id_barang', '$jumlah', '$qty', '$harga' , '$total_harga', '$nominal_bayar', '$kembalian')");
-
-        $updateQty = mysqli_query($koneksi, "UPDATE barang SET qty = qty - $jumlah WHERE id = '$id_barang'");
-        header("Location: ../kasir.php");
-        exit();
+        $updateQty = mysqli_query($koneksi, "UPDATE barang SET qty = qty - $jumlah WHERE id = $id_barang");
     }
+
+
+    header("Location: ../print.php?id=" . $id_penjualan);
+    exit();
 }
